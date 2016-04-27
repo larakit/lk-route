@@ -1,0 +1,19 @@
+{
+    "name": "larakit/lk-route",
+    "description": "[Larakit] Пакет для простой инициализации роутов",
+    "version": "1.0.0",
+    "keywords": [
+        "laravel",
+        "laravel 5",
+        "larakit"
+    ],
+    "license": "MIT",
+    "require": {
+        "laravel/framework": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Larakit\\Route\\": "src/"
+        }
+    }
+}

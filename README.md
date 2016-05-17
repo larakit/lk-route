@@ -1,3 +1,8 @@
+[![Total Downloads](https://poser.pugx.org/larakit/lk-route/d/total.svg)](https://packagist.org/packages/larakit/lk-route)
+[![Latest Stable Version](https://poser.pugx.org/larakit/lk-route/v/stable.svg)](https://packagist.org/packages/larakit/lk-route)
+[![Latest Unstable Version](https://poser.pugx.org/larakit/lk-route/v/unstable.svg)](https://packagist.org/packages/larakit/lk-route)
+[![License](https://poser.pugx.org/larakit/lk-route/license.svg)](https://packagist.org/packages/larakit/lk-route)
+
 # [LarakitRoute] 
 
 Проблема, которые решает данный инструмент:
@@ -234,3 +239,77 @@ $group->routeIndexItemMethod('delete')->put('delete');
 
 ~~~
 <img src="https://habrastorage.org/files/5b3/010/07a/5b301007a4ce4b29b89e08e9d55a962a.png" />
+
+###Роуты с параметрами
+
+Сделаем роут для перехода из контекстной рекламы по ссылке с UTM-метками.
+
+При добавлении параметров роута следующие правила:
+- сперва передаем имя параметра, если он не обязателен - добавьте после него вопрос, например 'param_name?'
+- затем передаем правило валидации (регулярное выражение)
+
+~~~
+/{utm_source}/{utm_medium}/{utm_campaign}/{utm_term}/{utm_content}
+~~~
+
+~~~php
+$group = \Larakit\Route\Route::group('utm')
+    ->routeIndex()
+    //Источник кампании - utm_source
+    //Источник перехода: google, yandex, newsletter и т.п.
+    ->addParam('utm_source', '[\w]+')
+    
+    //Канал кампании - utm_medium
+    //Тип трафика: cpc, ppc, banner, email и т.п.
+    ->addParam('utm_medium', '[\w-\d]+')
+    
+    //Название кампании - utm_campaign
+    //впишем сюда ID компании из местной CRM (целое число)
+    //можно было вручную вписать "'[\w-\d]+'", но "true" короче и чаще всего используется
+    ->addParam('utm_campaign', true)
+    
+    //Ключевое слово - utm_term
+    //(не обязательное поле, без валидации)
+    ->addParam('utm_term?')
+    
+    //Содержание кампании - utm_content
+    //(не обязательное поле, без валидации)
+    ->addParam('utm_content?')
+    ->put();
+
+~~~
+<img src="https://habrastorage.org/files/6e5/ea4/6e7/6e5ea46e74ac4ee6b8b22c94ad7fdf17.png" />
+
+Вроде бы все хорошо, только хотелось бы, чтобы ссылка была от корня, для этого изменим базовый URL группы
+
+
+~~~php
+$group = \Larakit\Route\Route::group('utm')
+    ->setBaseUrl('')
+    ->routeIndex()
+    //Источник кампании - utm_source
+    //Источник перехода: google, yandex, newsletter и т.п.
+    ->addParam('utm_source', '[\w]+')
+    
+    //Канал кампании - utm_medium
+    //Тип трафика: cpc, ppc, banner, email и т.п.
+    ->addParam('utm_medium', '[\w-\d]+')
+    
+    //Название кампании - utm_campaign
+    //впишем сюда ID компании из местной CRM (целое число)
+    //можно было вручную вписать "'[\w-\d]+'", но "true" короче и чаще всего используется
+    ->addParam('utm_campaign', true)
+    
+    //Ключевое слово - utm_term
+    //(не обязательное поле, без валидации)
+    ->addParam('utm_term?')
+    
+    //Содержание кампании - utm_content
+    //(не обязательное поле, без валидации)
+    ->addParam('utm_content?')
+    ->put();
+
+~~~
+<img src="https://habrastorage.org/files/481/c2b/963/481c2b963b8f4323ba1783b3ec47e612.png" />
+
+Вот так легко и непринужденно мы избавились от необходимости держать в голове принцип построения роутинга в Laravel5

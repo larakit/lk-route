@@ -1,13 +1,43 @@
 <?php
 namespace Larakit\Route;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Larakit\Manager\ManagerSection;
 
 class Route {
 
-    static $data;
+    const METHOD_POST               = 'post';
+    const METHOD_GET                = 'get';
+    const METHOD_PUT                = 'put';
+    const METHOD_DELETE             = 'delete';
+    const METHOD_PATCH              = 'patch';
+    const PATTERN_ANY               = '.+';
+    const PATTERN_NUMERIC_TEXT      = '[\w\d]+';
+    const PATTERN_NUMERIC_TEXT_DASH = '[\w-\d]+';
+    const PATTERN_NUMERIC           = '\d+';
+    const PATTERN_DATE              = '\d+\-\d+\-\d+';
+    const PATTERN_EMAIL             = '[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}';
+    static    $routes;
+    protected $code;
+    protected $model      = null;
+    protected $namespace  = null;
+    protected $domain     = null;
+    protected $middleware = [];
+    protected $base_url   = null;
+
+    function __construct($code) {
+        $this->code = $code;
+        $this->setBaseUrl(self::makeBaseUrl($this->code));
+    }
+
+    static protected function makeBaseUrl($as) {
+        $parse = self::parseRouteName($as);
+        $as    = Arr::get($parse, 'as');
+        $as    = str_replace(['.', '_'], ['/', '-'], $as);
+
+        return $as;
+    }
 
     /**
      * @param $as
@@ -19,217 +49,209 @@ class Route {
             $namespace = Arr::get(explode('::', $as), 0);
             $as        = Arr::get(explode('::', $as), 1);
         } else {
-            $namespace = '';
+            $namespace = \App::getNamespace();
         }
 
         return compact('namespace', 'as');
     }
 
-    static function makeAction($as) {
-        $parse = self::parseRouteName($as);
-        $as    = Arr::get($parse, 'as');
-        switch(true) {
-            case (0 === mb_strpos($as, 'ajax.'));
-                return 'ajax';
-                break;
-            case (false !== mb_strpos($as, '.item'));
-                return 'item';
-                break;
+    /**
+     * @param $as
+     *
+     * @return Route
+     */
+    static function group($as) {
+        if(!isset(self::$routes[$as])) {
+            self::$routes[$as] = new Route($as);
         }
 
-        return 'index';
-    }
-
-    static function makeNamespace($as) {
-        $parse     = self::parseRouteName($as);
-        $namespace = Arr::get($parse, 'namespace');
-        if($namespace) {
-            $section_namespace     = explode('-', $namespace);
-            $last                  = array_pop($section_namespace);
-            $section_namespace     = implode('-', $section_namespace);
-            $section_namespace_php = trim(Str::studly($section_namespace) . '\\' . Str::studly($last), '\\');
-        } else {
-            $section_namespace_php = 'Larakit';
-        }
-        $append = '';
-        //        $sections = ['ajax' => 'ajax'];// + ManagerSection::get();
-        //        foreach ($sections as $code => $name) {
-        //            if (0 === mb_strpos(Arr::get($parse, 'as'), $code . '.')) {
-        //                $append = '\\' . Str::studly($code);
-        //            }
-        //        }
-        return $section_namespace_php . '\Controllers' . $append;
-
-        return ($namespace ? \Str::studly(str_replace('-', '\\_', $namespace)) : 'Larakit') . '\Controller' . $append;
-    }
-
-    static function makeController($as) {
-        $parse = self::parseRouteName($as);
-        $as    = Arr::get($parse, 'as');
-
-        return 'Controller' . Str::studly(str_replace('.', '_', $as));
-    }
-
-    static function makeBaseUrl($as) {
-        $parse = self::parseRouteName($as);
-        $as    = Arr::get($parse, 'as');
-        if('ajax.' == mb_substr($as, 0, 5)) {
-            $as = str_replace('ajax.', '!.ajax.', $as);
-        }
-        $as = str_replace('.', '/', $as);
-        $as = str_replace('_', '-', $as);
-
-        return '/' . trim($as, '/');
+        return self::$routes[$as];
     }
 
     /**
-     * @param null $as
+     * @return RouteItem
+     */
+    function routeIndex() {
+        return $this->route($this->code)->setUrl($this->getBaseUrl());
+    }
+
+    /**
+     * @param $as
      *
      * @return RouteItem
      */
-    static function add($as = null) {
-        return RouteItem::factory($as);
+    protected function route($as) {
+        $r = new RouteItem($as);
+        $r->setUrl(self::makeBaseUrl($as))
+          ->setPattern($this->getModelPattern())
+          ->setModelName($this->getModelName())
+          ->setController(self::makeController($as))
+          ->addMiddleware($this->getMiddleware())
+          ->setAction('index');
+
+        return $r
+            ->setNamespace($this->getNamespace())
+            ->setDomain($this->getDomain())
+            ->addMiddleware($this->getMiddleware())
+            ->setController(self::makeController($as));
     }
 
-    static function ajax($as = null) {
-        $parse     = self::parseRouteName($as);
-        $namespace = Arr::get($parse, 'namespace');
-        $as        = Arr::get($parse, 'as');
+    static protected function makeController($as) {
+        $parse = self::parseRouteName($as);
+        $as    = Arr::get($parse, 'as');
 
-        return self::add(($namespace ? $namespace . '::' : '') . 'ajax.' . $as);
-    }
-
-    static function get($as = null) {
-        $as = is_null($as) ? \Route::currentRouteName() : $as;
-
-        return isset(self::$data[$as]) ? self::$data[$as] : [];
-    }
-
-    static function _($as = null, $prop = null) {
-        $route = self::get($as);
-        if(!$prop) {
-            return $route;
-        }
-        $prop = str_replace('get_', '', $prop);
-
-        return isset($route[$prop]) ? $route[$prop] : null;
-    }
-
-    static function lang($as, $prop) {
-        $prop = str_replace('get_', '', $prop);
-        $key  = str_replace('.', '|', $as);
-        if(mb_strpos($as, '::') !== false) {
-            $key = str_replace('::', '::seo/' . $prop . '.', $key);
-        } else {
-            $key = 'seo/' . $prop . '.' . $key;
-        }
-
-        return \Lang::get($key);
-    }
-
-    static function get_title($as = null) {
-        return self::lang($as, __FUNCTION__);
-    }
-
-    static function get_icon($as = null) {
-        return self::_($as, __FUNCTION__);
-    }
-
-    static function get_h1_ext($as = null) {
-        return self::lang($as, __FUNCTION__);
-    }
-
-    static function get_h1($as = null) {
-        return self::lang($as, __FUNCTION__);
-    }
-
-    static function get_url($as = null) {
-        return self::_($as, __FUNCTION__);
-    }
-
-    static function get_filter($as = null) {
-        return self::_($as, __FUNCTION__);
-    }
-
-    static $filter_check_results = [];
-
-    /**
-     * Проверить один фильтр
-     *
-     * @param $as
-     *
-     * @return mixed|null
-     */
-    static function checkFilter($filter) {
-        if(!isset(self::$filter_check_results[$filter])) {
-            $ret             = Event::filter('route_filter:' . $filter);
-            $result[$filter] = $ret;
-        } else {
-            $ret = Arr::get(self::$filter_check_results, $filter);
-        }
-
-        return $ret;
+        return Str::studly(str_replace('.', '_', $as));
     }
 
     /**
-     * @param $as
-     *
-     * @return mixed|null
+     * @return null
      */
-    static function checkRouteFilters($as) {
-        $filters = (array) Route::get_filter($as);
-        foreach($filters as $filter) {
-            $ret = self::checkFilter($filter);
-            if($ret) {
-                return $ret;
-            }
+    public function getNamespace() {
+        return $this->namespace ? : Route::makeNamespace($this->code);
+    }
+
+    /**
+     * @param $namespace
+     *
+     * @return $this
+     */
+    public function setNamespace($namespace) {
+        $this->namespace = $namespace;
+
+        return $this;
+    }
+
+    static function makeNamespace($as) {
+        $parse                 = self::parseRouteName($as);
+        $namespace             = Arr::get($parse, 'namespace');
+        $section_namespace     = explode('-', $namespace);
+        $last                  = array_pop($section_namespace);
+        $section_namespace     = implode('-', $section_namespace);
+        $section_namespace_php = trim(Str::studly($section_namespace) . '\\' . Str::studly($last), '\\');
+
+        return $section_namespace_php . '\Http\Controllers';
+    }
+
+    /**
+     * @return null
+     */
+    public function getDomain() {
+        return $this->domain;
+    }
+
+    /**
+     * @param $domain
+     *
+     * @return $this
+     */
+    public function setDomain($domain) {
+        $this->domain = $domain;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMiddleware() {
+        return $this->middleware;
+    }
+
+    /**
+     * @param $middleware
+     *
+     * @return $this
+     */
+    public function setMiddleware($middleware) {
+        $this->middleware = $middleware;
+
+        return $this;
+    }
+
+    /**
+     * @return null
+     */
+    public function getBaseUrl() {
+        return $this->base_url;
+    }
+
+    /**
+     * @param $base_url
+     *
+     * @return $this
+     */
+    public function setBaseUrl($base_url) {
+        $this->base_url = '/' . trim($base_url, '/') . '/';
+
+        return $this;
+    }
+
+    /**
+     * @return RouteItem
+     */
+    function routeIndexItem() {
+        return $this->route($this->code . '.item')->setUrl($this->getBaseUrl() . '{' . $this->getModelName() . '}/');
+    }
+
+    /**
+     * @return RouteItem
+     */
+    function routeIndexMethod($method) {
+        return $this->route($this->code . '.' . $method)->setUrl($this->getBaseUrl() . $method);
+    }
+
+    /**
+     * @return RouteItem
+     */
+    function routeIndexItemMethod($method) {
+        return $this->route($this->code . '.item.' . $method)->setUrl($this->getBaseUrl() . '{' . $this->getModelName() . '}/' . $method);
+    }
+
+    public function getModelName() {
+        return $this->getModel('model_name')?:'id';
+    }
+
+    public function getModel($param = null) {
+        if($param) {
+            return Arr::get($this->model, $param);
         }
 
-        return null;
+        return $this->model;
     }
 
-    static function isEnable($as) {
-        return !in_array($as, config('routes_disabled', []));
+    /**
+     * @param      $model_name
+     * @param      $model_class
+     * @param bool $pattern
+     *
+     * @return $this
+     */
+    public function setModel($model_name, $model_class, $pattern = true) {
+        \Route::model($model_name,
+            $model_class,
+            function ($id) {
+                $e = new ModelNotFoundException('Ничего не найдено');
+
+                return $e->setModel($id);
+            });
+
+        $this->model = compact('model_name', 'model_class', 'pattern');
+
+        return $this;
     }
 
-    static function seo($as, $prop) {
-        $_as = Route::parseRouteName($as);
-        $n   = Arr::get($_as, 'namespace');
-        $r   = str_replace('.', '|', Arr::get($_as, 'as'));
-        $key = ($n ? $n . '::' : '') . 'seo/' . $prop . '.' . $r;
-        $ret = laralang($key);
-
-        return ($ret != $key) ? $ret : (\Config::get('app.debug') ? $key : '');
+    public function getModelClass() {
+        return $this->getModel('model_class');
     }
 
-    static function seoTitle($as) {
-        return self::seo($as, 'title');
-    }
-
-    static function seoDescription($as) {
-        return self::seo($as, 'description');
-    }
-
-    static function seoH1($as) {
-        return self::seo($as, 'h1');
-    }
-
-    static function seoH1Ext($as) {
-        return self::seo($as, 'h1_ext');
-    }
-
-    protected static function route_section($vendor, $package) {
-
-    }
-
-    static function thumb($vendor, $package) {
-
+    public function getModelPattern() {
+        return $this->getModel('pattern')?:true;
     }
 
 }
 
-\Route::pattern('any', '.+');
-\Route::pattern('user', '[\w\d]+');
-\Route::pattern('action', '[\w-\d]+');
-\Route::pattern('date', '\d+\-\d+\-\d+');
-\Route::pattern('id', '\d+');
+\Route::pattern('any', Route::PATTERN_ANY);
+\Route::pattern('user', Route::PATTERN_NUMERIC_TEXT);
+\Route::pattern('action', Route::PATTERN_NUMERIC_TEXT_DASH);
+\Route::pattern('date', Route::PATTERN_DATE);
+\Route::pattern('id', Route::PATTERN_NUMERIC);

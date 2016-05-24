@@ -82,14 +82,12 @@ class Route {
      */
     protected function route($as) {
         $r = new RouteItem($as);
-        $r->setUrl(self::makeBaseUrl($as))
-          ->setPattern($this->getModelPattern())
-          ->setModelName($this->getModelName())
-          ->setController(self::makeController($as))
-          ->addMiddleware($this->getMiddleware())
-          ->setAction('index');
-
-        return $r
+        return $r->setUrl(self::makeBaseUrl($as))
+            ->setPattern($this->getModelPattern())
+            ->setModelName($this->getModelName())
+            ->setController(self::makeController($as))
+            ->addMiddleware($this->getMiddleware())
+            ->setAction('index')
             ->setNamespace($this->getNamespace())
             ->setDomain($this->getDomain())
             ->addMiddleware($this->getMiddleware())
@@ -122,14 +120,15 @@ class Route {
     }
 
     static function makeNamespace($as) {
-        $parse                 = self::parseRouteName($as);
+        $parse = self::parseRouteName($as);
+//        dump($parse);
         $namespace             = Arr::get($parse, 'namespace');
         $section_namespace     = explode('-', $namespace);
         $last                  = array_pop($section_namespace);
         $section_namespace     = implode('-', $section_namespace);
         $section_namespace_php = trim(Str::studly($section_namespace) . '\\' . Str::studly($last), '\\');
 
-        return $section_namespace_php . '\Http\Controllers';
+        return $section_namespace_php . (($namespace==\App::getNamespace())?'\Http\Controllers':'\Controllers');
     }
 
     /**
@@ -208,7 +207,7 @@ class Route {
     }
 
     public function getModelName() {
-        return $this->getModel('model_name')?:'id';
+        return $this->getModel('model_name') ? : 'id';
     }
 
     public function getModel($param = null) {
@@ -245,7 +244,7 @@ class Route {
     }
 
     public function getModelPattern() {
-        return $this->getModel('pattern')?:true;
+        return $this->getModel('pattern') ? : true;
     }
 
 }

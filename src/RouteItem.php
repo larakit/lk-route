@@ -122,7 +122,6 @@ class RouteItem {
         ], function () use ($http_method) {
             $uses   = '\\' . $this->getNamespace() . '\\' . $this->getController() . '@' . $this->getAction();
             $method = $this->getMethod($http_method);
-
             /** @var $route \Illuminate\Routing\Route */
             $route = \Route::$method($this->getUrl(), [
                 'as'   => $this->as,
@@ -175,7 +174,7 @@ class RouteItem {
      * @return $this
      */
     public function setNamespace($namespace) {
-        $this->namespace = $namespace;
+        $this->namespace = trim($namespace, '\\');
 
         return $this;
     }

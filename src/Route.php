@@ -127,7 +127,6 @@ class Route {
         $last                  = array_pop($section_namespace);
         $section_namespace     = implode('-', $section_namespace);
         $section_namespace_php = trim(Str::studly($section_namespace) . '\\' . Str::studly($last), '\\');
-
         return $section_namespace_php . (($namespace==\App::getNamespace())?'\Http\Controllers':'\Controllers');
     }
 

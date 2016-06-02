@@ -82,6 +82,7 @@ class Route {
      */
     protected function route($as) {
         $r = new RouteItem($as);
+
         return $r->setUrl(self::makeBaseUrl($as))
             ->setPattern($this->getModelPattern())
             ->setModelName($this->getModelName())
@@ -127,7 +128,8 @@ class Route {
         $last                  = array_pop($section_namespace);
         $section_namespace     = implode('-', $section_namespace);
         $section_namespace_php = trim(Str::studly($section_namespace) . '\\' . Str::studly($last), '\\');
-        return $section_namespace_php . (($namespace==\App::getNamespace())?'\Http\Controllers':'\Controllers');
+
+        return $section_namespace_php . (($namespace == \App::getNamespace()) ? '\Http\Controllers' : '\Controllers');
     }
 
     /**
@@ -244,6 +246,45 @@ class Route {
 
     public function getModelPattern() {
         return $this->getModel('pattern') ? : true;
+    }
+
+    static $route_params = [];
+    static $route_seo = [];
+
+    /**
+     * @param null $route
+     *
+     * @return array|mixed
+     */
+    public static function getRouteSeo($route=null) {
+        return $route ? Arr::get(self::$route_seo, $route, []) : self::$route_seo;
+    }
+
+    /**
+     * @param      $route_seo
+     * @param      $title
+     * @param null $description
+     * @param null $keywords
+     */
+    public static function setRouteSeo($route_seo, $title, $description=null, $keywords=null) {
+        self::$route_seo[$route_seo] = compact('title', 'description', 'keywords');
+    }
+
+    /**
+     * @param null $route
+     *
+     * @return array|mixed
+     */
+    public static function getRouteParams($route = null) {
+        return $route ? Arr::get(self::$route_params, $route, []) : self::$route_params;
+    }
+
+    /**
+     * @param $route
+     * @param $params
+     */
+    public static function setRouteParams($route, $params) {
+        self::$route_params[$route] = $params;
     }
 
 }

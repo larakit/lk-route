@@ -56,12 +56,70 @@ class RouteItem {
     /**
      * @var array
      */
-    protected $params = [];
-    protected $params_url = '';
+    protected $params         = [];
+    protected $params_pattern = [];
+    protected $params_url     = '';
     /**
      * @var null
      */
     protected $as;
+    protected $seo_title;
+    protected $seo_keywords;
+    protected $seo_description;
+
+    /**
+     * @return mixed
+     */
+    public function getSeoTitle() {
+        return $this->seo_title;
+    }
+
+    /**
+     * @param mixed $seo_title
+     *
+     * @return RouteItem;
+     */
+    public function setSeoTitle($seo_title) {
+        $this->seo_title = $seo_title;
+
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSeoKeywords() {
+        return $this->seo_keywords;
+    }
+
+    /**
+     * @param mixed $seo_keywords
+     *
+     * @return RouteItem;
+     */
+    public function setSeoKeywords($seo_keywords) {
+        $this->seo_keywords = $seo_keywords;
+
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSeoDescription() {
+        return $this->seo_description;
+    }
+
+    /**
+     * @param mixed $seo_description
+     *
+     * @return RouteItem;
+     */
+    public function setSeoDescription($seo_description) {
+        $this->seo_description = $seo_description;
+
+        return $this;
+    }
 
     /**
      * RouteItem constructor.
@@ -116,6 +174,7 @@ class RouteItem {
      * @return $this
      */
     function put($http_method = null) {
+        $this->getParams();
         \Route::group([
             'middleware' => $this->getMiddleware(),
             'domain'     => $this->getDomain(),
@@ -126,12 +185,14 @@ class RouteItem {
             $route = \Route::$method($this->getUrl(), [
                 'as'   => $this->as,
                 'uses' => $uses,
-            ])->where($this->getParams());
+            ])->where($this->getParamsPattern());
             if($this->getModelName()) {
                 $route->where($this->getModelName(), $this->getPattern());
 
             }
         });
+        Route::setRouteParams($this->as, array_keys($this->getParams()));
+        Route::setRouteSeo($this->as, $this->seo_title, $this->seo_description, $this->seo_keywords);
 
         return $this;
     }
@@ -249,13 +310,14 @@ class RouteItem {
      * @return null
      */
     public function getUrl() {
-        $ext    = $this->getExt();
+        $ext = $this->getExt();
         $url = $this->url;
         $url .= $this->params_url;
-        if($ext){
-            $url = rtrim($this->url, '/').'.'.$this->ext;
+        if($ext) {
+            $url = rtrim($this->url, '/') . '.' . $this->ext;
         }
-        return $url ;
+
+        return $url;
     }
 
     /**
@@ -276,28 +338,35 @@ class RouteItem {
         return $this->params;
     }
 
+    public function getParamsPattern() {
+        return $this->params_pattern;
+    }
+
     /**
      * @param      $name
      * @param null $pattern
      *
      * @return $this
      */
-    function addParam($name, $pattern=null){
+    function addParam($name, $pattern = null) {
+        $param_name                = rtrim($name, '?');
+        $this->params[$param_name] = $param_name;
         if($pattern) {
-            if(true === $pattern){
+            if(true === $pattern) {
                 $pattern = '[0-9]+';
             }
-            $this->params[rtrim($name, '?')] = $pattern;
+            $this->params_pattern[$param_name] = $pattern;
         }
         $this->params_url .= '{' . $name . '}/';
+
         return $this;
     }
-
-    function clearParams(){
-        $this->params = [];
+    
+    
+    function clearParams() {
+        $this->params     = [];
         $this->params_url = '';
     }
-
 
     /**
      * @return null
@@ -321,7 +390,7 @@ class RouteItem {
      * @return null
      */
     public function getPattern() {
-        return (true===$this->pattern)?Route::PATTERN_NUMERIC:$this->pattern;
+        return (true === $this->pattern) ? Route::PATTERN_NUMERIC : $this->pattern;
     }
 
     /**

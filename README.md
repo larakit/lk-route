@@ -23,61 +23,63 @@ Route::group(['middleware' => 'auth'], function () {
 
 Рассмотрим типовые потребности, которые легко и красиво реализовывает данный пакет
 
-###Простая страница с расширением
+###Обычная страница "О нас"
+Добавим роут в ./app/Http/routes.php
 ~~~php
-\Larakit\Route\Route::group('about')
-  ->routeIndex()
-  ->setExt('html')
-  ->put();
+\Larakit\Route\Route::item('about')
+    ->put();
 ~~~
-<img src="https://habrastorage.org/files/023/f58/34a/023f5834aef342e3b050b6c9f5de7a93.png" />
+
+Посмотрим список роутов в консоли:
+~~~bash
+php artisan route:list
+~~~
+<img src="https://habrastorage.org/files/33e/066/e64/33e066e64ec84bca90aef7e1ea71318e.png"/>
+
+Создадим контроллер "App\Http\Controllers\AboutController" и запустим команду **php artisan route:list** еще раз:
+
+<img src="https://habrastorage.org/files/720/323/3ce/7203233ce064400d8ea20229fd40a946.png"/>
 
 Все хорошо, но мы хотим, чтобы эта страница была доступна только методом GET
 
 ###Ограничим доступные методы
 ~~~php
-\Larakit\Route\Route::group('about')
-  ->routeIndex()
-  ->setExt('html')
-  ->put('get');
+\Larakit\Route\Route::item('about')
+    ->put('get');
 ~~~
-<img src="https://habrastorage.org/files/ffb/34b/595/ffb34b59519446a5a8b1d6c2c9bfa8bd.png" />
+<img src="https://habrastorage.org/files/3be/04a/1fc/3be04a1fc8ec4ceebdf9f759e83c955b.png"/>
 
 Заметьте, имя контроллера, пространство имен, имя метода контроллера была сгенерированы на основе имени роута автоматически, но это можно изменить.
 
 ###Изменение пространства имен
 По умолчанию, пространство имен берется из App::getNamespace(). Но его можно изменить на уровне группы:
 ~~~php
-\Larakit\Route\Route::group('about')
+\Larakit\Route\Route::item('about')
     ->setNamespace('Qwerty')
-    ->routeIndex()
-    ->setExt('html')
     ->put('get');
 ~~~
-<img src="https://habrastorage.org/files/e41/cfe/018/e41cfe01836b420dadb805f9b12f7942.png" />
+<img src="https://habrastorage.org/files/f9b/53e/3fb/f9b53e3fb31e48dba08a7cfa33ee8467.png"/>
 
-Все, из полученного исключения сразу понятно, какое пространство имен контроллера ожидалось - создаем его и все работает.
+Из полученного исключения сразу понятно, какое пространство имен контроллера ожидалось - создаем его и все работает.
 
 ###Изменение имени контроллера
 ~~~php
-\Larakit\Route\Route::group('about')
-    ->routeIndex()
-    ->setController('Static')
-    ->setExt('html')
+\Larakit\Route\Route::item('about')
+    ->setNamespace('Qwerty')
+    ->setController('AboutPage')
     ->put('get');
 ~~~
-<img src="https://habrastorage.org/files/b6e/e16/23c/b6ee1623cf6c4acd91e62d4f4db6ca98.png" />
+<img src="https://habrastorage.org/files/f27/57e/c07/f2757ec071a143bfbb365ac3b24c0dd4.png"/>
 
-Так же можно задать полное имя класса контроллера
+Так же можно задать callback
 ~~~php
-use \App\Http\Controllers\StaticController;
-\Larakit\Route\Route::group('about')
-    ->routeIndex()
-    ->setControllerClass(StaticController::class)
-    ->setExt('html')
+\Larakit\Route\Route::item('about')
+    ->setUses(function(){
+        return 'Callback Text!';
+    })
     ->put('get');
 ~~~
-<img src="https://habrastorage.org/files/94d/27c/afb/94d27cafbbc14fd5a5f847d75c843ccf.png" />
+<img src="https://habrastorage.org/files/f2e/7df/ffd/f2e7dfffded6470c9b459dbbc6764e3e.png"/>
 
 ###Изменение домена
 Если у вас на одном проекте работают много доменов, например
@@ -87,28 +89,32 @@ habrahabr.ru
 ~~~
 то можно сделать так, чтобы роут был доступен только на одном домене
 ~~~php
-\Larakit\Route\Route::group('about')
+\Larakit\Route\Route::item('about')
     ->setDomain('habrahabr.ru')
-    ->routeIndex()
+    ->setUses(function(){
+        return 'Callback Text!';
+    })
     ->put('get');
 ~~~
-<img src="https://habrastorage.org/files/3d5/420/49c/3d542049c7be49568c21b0083a7793bb.png" />
+<img src="https://habrastorage.org/files/0b5/ca9/b3e/0b5ca9b3e4b7468b9f77955224d88afb.png"/>
 
 или так:
 
 ~~~php
-\Larakit\Route\Route::group('about')
+\Larakit\Route\Route::item('about')
     ->setDomain('*.habrahabr.ru')
-    ->routeIndex()
-    ->setControllerClass(\App\Http\Controllers\StaticController::class)
+    ->setUses(function(){
+        return 'Callback Text!';
+    })
     ->put('get');
-\Larakit\Route\Route::group('about_groove')
+\Larakit\Route\Route::item('about_groove')
     ->setDomain('groove.habrahabr.ru')
-    ->routeIndex()
-    ->setControllerClass(\App\Http\Controllers\StaticController::class)
+    ->setUses(function(){
+        return 'About Groove!';
+    })
     ->put('get');
 ~~~
-<img src="https://habrastorage.org/files/f66/de9/b93/f66de9b938024a6aa990327256c0d57b.png" />
+<img src="https://habrastorage.org/files/ea5/c2d/3f7/ea5c2d3f737c4573b18e5decd0edc307.png"/>
 
 ###Создание группы связанных роутов
 Попытаемся сделать связку роутов для админки, которые будут заниматься управлением пользователями
@@ -125,120 +131,184 @@ habrahabr.ru
 **Рекомендация**: разбивайте имя роута точками по слэшам
 
 ~~~php
-$group = \Larakit\Route\Route::group('admin.users');
-$group->routeIndex()->setAction('index')->put();
+\Larakit\Route\Route::item('admin.users')
+    //добавим страницу со списком пользователей
+    ->put();
 ~~~
-<img src="https://habrastorage.org/files/cfe/d3f/42e/cfed3f42e2734fcf9ca41c229f35eb23.png" />
+<img src="https://habrastorage.org/files/900/cf8/703/900cf870325b4db6b1549f4dd365f5d7.png"/>
 
 Видим, что автоматически сформированный URL нас не устраивает, поправим его (он автоматически поменяется для всех вложенных в группу страниц)
 ~~~php
-$group = \Larakit\Route\Route::group('admin.users')
-  ->setBaseUrl('/admincp/users');
+$group = \Larakit\Route\Route::item('admin.users')
+    //изменим базовый URL
+    ->setBaseUrl('admincp/users');
 
-#/admincp/users/  
-$group->routeIndex()->setAction('index')->put();
+#/admincp/users/
+$group->put();
 ~~~
 
-<img src="https://habrastorage.org/files/876/76a/cfc/87676acfcde744b488d13f2ca08fcbbb.png" />
+<img src="https://habrastorage.org/files/3c6/263/fe6/3c6263fe6bd64145b46e06be3525e284.png"/>
 
 Зарегистрируем страницу добавления пользователя
 ~~~php
-$group = \Larakit\Route\Route::group('admin.users')
-    ->setBaseUrl('/admincp/users');
-    
-#/admincp/users/    
-$group->routeIndex()->setAction('index')->put();
+$group = \Larakit\Route\Route::item('admin.users')
+    //изменим базовый URL
+    ->setBaseUrl('admincp/users');
+
+#/admincp/users/
+$group->put();
 
 #/admincp/users/add
-$group->routeIndexMethod('add')->put();
+$group
+    ->addSegment('add')
+    ->put();
 ~~~
 
-<img src="https://habrastorage.org/files/129/1c4/a07/1291c4a07a3a42c9b628c98f9d18e627.png" />
+<img src="https://habrastorage.org/files/55d/f5e/614/55df5e6148e6422b9f9f33e422ff8805.png"/>
 
 Сделаем так, чтобы у нас при запросе на этот роут методом GET отдавалась страница с формой добавления пользователя, а при запросе методом POST производилась попытка валидации и сохранения пользователя.
 
 Причем, чтобы этот функционал был разнесен по разным методам контроллера.
 
 ~~~php
-$group = \Larakit\Route\Route::group('admin.users')
-    ->setBaseUrl('/admincp/users');
-    
-#/admincp/users/    
-$group->routeIndex()->setAction('index')->put();
+$group = \Larakit\Route\Route::item('admin.users')
+    //изменим базовый URL
+    ->setBaseUrl('admincp/users');
+
+#/admincp/users/
+$group->put();
 
 #/admincp/users/add
-$group->routeIndexMethod('add')->setAction('create')->put('get');
-$group->routeIndexMethod('add')->setAction('store')->put('post');
+$group
+    ->addSegment('add')
+    ->setAction('create')
+    ->put('get')
+    ->addSegment('add')
+    ->setAction('store')
+    ->put('post');
 ~~~
-<img src="https://habrastorage.org/files/34c/e42/3e5/34ce423e521f44b297b31025a43bf2ba.png" />
+<img src="https://habrastorage.org/files/75a/6dd/660/75a6dd660ff945da9c6b48aa90cf73ee.png"/>
 
 Продолжаем! Добавим вывод страницы пользователя
 
 ~~~php
-$group = \Larakit\Route\Route::group('admin.users')
-    ->setBaseUrl('/admincp/users');
-    
-#/admincp/users/    
-$group->routeIndex()->setAction('index')->put();
+$group = \Larakit\Route\Route::item('admin.users')
+    //изменим базовый URL
+    ->setBaseUrl('admincp/users');
+
+#/admincp/users/
+$group->put();
 
 #/admincp/users/add
-$group->routeIndexMethod('add')->setAction('create')->put('get');
-$group->routeIndexMethod('add')->setAction('store')->put('post');
+$group
+    ->addSegment('add')
+    ->setAction('create')
+    ->put('get')
+    ->addSegment('add')
+    ->setAction('store')
+    ->put('post');
 
-#/admincp/users/123/
-$group->routeIndexItem()->put();
+#/admincp/users/{user_id}
+$group
+    //сделаем сброс добавленного сегмента "add" чтобы начать формировать новую ветку от базового URL
+    ->clearSegments()
+    ->addSegment('{user_id}')
+    //зададим паттерн для этого параметра только этого роута
+    //->addPattern('user_id', '[a-z0-9]+')
+    //true означает проверку на целое число (как самое часто употребляемое)
+    ->addPattern('user_id', true)
+    ->put('get');
 ~~~
-<img src="https://habrastorage.org/files/514/292/c60/514292c60e4c42d3ad8531c910f7c0c6.png" />
+<img src="https://habrastorage.org/files/857/489/70c/85748970cb43484d8026f354f32d0fae.png"/>
 
 Причем, автоматически будет произведена проверка, что параметр id является целым числом
 
 Но нам хотелось бы, чтобы производилась проверка на наличие модели с таким идентификатором. Для этого на уровне группы добавим модель и опишем ее.
 
 ~~~php
-$group = \Larakit\Route\Route::group('admin.users')
-    ->setModel('user', \App\User::class)
-    ->setBaseUrl('/admincp/users');
-    
-#/admincp/users/    
-$group->routeIndex()->setAction('index')->put();
+//проверка на наличие пользователя с таким идентификатором
+Route::model('user_id', \App\User::class, function ($id) {
+    throw new \Illuminate\Database\Eloquent\ModelNotFoundException('User with ID='.$id.' not found!');
+});
+
+$group = \Larakit\Route\Route::item('admin.users')
+    //изменим базовый URL
+    ->setBaseUrl('admincp/users');
+
+#/admincp/users/
+$group->put();
 
 #/admincp/users/add
-$group->routeIndexMethod('add')->setAction('create')->put('get');
-$group->routeIndexMethod('add')->setAction('store')->put('post');
+$group
+    ->addSegment('add')
+    ->setAction('create')
+    ->put('get')
+    ->addSegment('add')
+    ->setAction('store')
+    ->put('post');
 
-
-#/admincp/users/123/
-$group->routeIndexItem()->put();
+#/admincp/users/{user_id}
+$group
+    //сделаем сброс последнего добавленного сегмента "add" чтобы начать формировать новую ветку от /admincp/users/
+    ->popSegment()
+    ->addSegment('{user_id}')
+    //зададим паттерн для этого параметра только этого роута
+    //->addPattern('user_id', '[a-z0-9]+')
+    ->addPattern('user_id', true)
+    ->put('get');
 ~~~
-<img src="https://habrastorage.org/files/284/88a/c27/28488ac2764f465a880d174298ca5dff.png" />
-
-Обратите внимание, что мы сменили имя параметра "id" на "user"
 
 Добавим оставшиеся методы
 ~~~php
-$group = \Larakit\Route\Route::group('admin.users')
-    ->setModel('user', \App\User::class)
-    ->setBaseUrl('/admincp/users');
+//проверка на наличие пользователя с таким идентификатором
+Route::model('user_id', \App\User::class, function ($id) {
+    throw new \Illuminate\Database\Eloquent\ModelNotFoundException('User with ID='.$id.' not found!');
+});
+
+$group = \Larakit\Route\Route::item('admin.users')
+    //изменим базовый URL
+    ->setBaseUrl('admincp/users');
 
 #/admincp/users/
-$group->routeIndex()->setAction('index')->put();
+$group->put();
 
-#/admincp/users/add/
-$group->routeIndexMethod('add')->setAction('create')->put('get');
-$group->routeIndexMethod('add')->setAction('store')->put('post');
+#/admincp/users/add
+$group
+    ->addSegment('add')
+    ->setAction('create')
+    ->put('get')
+    ->addSegment('add')
+    ->setAction('store')
+    ->put('post');
 
-#/admincp/users/123/
-$group->routeIndexItem()->put();
+#/admincp/users/{user_id}
+$group
+    //сделаем сброс последнего добавленного сегмента "add" чтобы начать формировать новую ветку от /admincp/users/
+    ->popSegment()
+    ->addSegment('{user_id}')
+    //зададим паттерн для этого параметра только этого роута
+    //->addPattern('user_id', '[a-z0-9]+')
+    ->addPattern('user_id', true)
+    ->put('get');
 
-#/admincp/users/123/edit
-$group->routeIndexItemMethod('edit')->setAction('update')->put('get');
-$group->routeIndexItemMethod('edit')->setAction('store')->put('post');
+#/admincp/users/{user_id}/edit
+$group
+    ->addSegment('edit')
+    ->setAction('update')
+    ->put('get')
+    ->addSegment('edit')
+    ->setAction('store')
+    ->put('post');
 
-#/admincp/users/123/delete
-$group->routeIndexItemMethod('delete')->put('delete');
+#/admincp/users/{user_id}/delete
+$group
+    //сделаем сброс последнего добавленного сегмента "edit" чтобы начать формировать новую ветку от /admincp/users/{user_id}/
+    ->popSegment()
+    ->addSegment('delete')
+    ->put('delete');
 
 ~~~
-<img src="https://habrastorage.org/files/5b3/010/07a/5b301007a4ce4b29b89e08e9d55a962a.png" />
+<img src="https://habrastorage.org/files/2d1/207/327/2d1207327b2e41579b8137f99926d5ef.png"/>
 
 ###Роуты с параметрами
 
@@ -253,63 +323,56 @@ $group->routeIndexItemMethod('delete')->put('delete');
 ~~~
 
 ~~~php
-$group = \Larakit\Route\Route::group('utm')
-    ->routeIndex()
+$group = \Larakit\Route\Route::item('utm')
+    ->setController('Utm')
+    
     //Источник кампании - utm_source
     //Источник перехода: google, yandex, newsletter и т.п.
-    ->addParam('utm_source', '[\w]+')
+    ->addSegment('{utm_source}')
+    ->addPattern('utm_source', '(google|yandex|newsletter)')
     
     //Канал кампании - utm_medium
     //Тип трафика: cpc, ppc, banner, email и т.п.
-    ->addParam('utm_medium', '[\w-\d]+')
+    ->addSegment('{utm_medium}')
+    ->addPattern('utm_medium', '[\w-\d]+')
     
     //Название кампании - utm_campaign
     //впишем сюда ID компании из местной CRM (целое число)
-    //можно было вручную вписать "'[\w-\d]+'", но "true" короче и чаще всего используется
-    ->addParam('utm_campaign', true)
+    //можно было вручную вписать "'[0-9]+'", но "true" короче и чаще всего используется
+    ->addSegment('{utm_campaign}')
+    ->addPattern('utm_campaign', true)
     
     //Ключевое слово - utm_term
     //(не обязательное поле, без валидации)
-    ->addParam('utm_term?')
+    ->addSegment('{utm_term?}')
     
     //Содержание кампании - utm_content
     //(не обязательное поле, без валидации)
-    ->addParam('utm_content?')
+    ->addSegment('{utm_content?}')
     ->put();
 
+
 ~~~
-<img src="https://habrastorage.org/files/6e5/ea4/6e7/6e5ea46e74ac4ee6b8b22c94ad7fdf17.png" />
+<img src="https://habrastorage.org/files/3e3/d86/f5f/3e3d86f5ff7044e29e85c69721602ee7.png"/>
 
-Вроде бы все хорошо, только хотелось бы, чтобы ссылка была от корня, для этого изменим базовый URL группы
-
-
+###Роуты с расширением
+Для того, чтобы сделать роут about.html и data.json нужно в метод put() вторым, необязательным параметром передать расширение
 ~~~php
-$group = \Larakit\Route\Route::group('utm')
-    ->setBaseUrl('')
-    ->routeIndex()
-    //Источник кампании - utm_source
-    //Источник перехода: google, yandex, newsletter и т.п.
-    ->addParam('utm_source', '[\w]+')
-    
-    //Канал кампании - utm_medium
-    //Тип трафика: cpc, ppc, banner, email и т.п.
-    ->addParam('utm_medium', '[\w-\d]+')
-    
-    //Название кампании - utm_campaign
-    //впишем сюда ID компании из местной CRM (целое число)
-    //можно было вручную вписать "'[\w-\d]+'", но "true" короче и чаще всего используется
-    ->addParam('utm_campaign', true)
-    
-    //Ключевое слово - utm_term
-    //(не обязательное поле, без валидации)
-    ->addParam('utm_term?')
-    
-    //Содержание кампании - utm_content
-    //(не обязательное поле, без валидации)
-    ->addParam('utm_content?')
-    ->put();
+\Larakit\Route\Route::item('about')
+    ->put('get', 'html');
+\Larakit\Route\Route::item('data')
+    ->setUses(function(){
+        return [
+            [
+                'name' => 'Toyota',
+            ],
+            [
+                'name' => 'Nissan',
+            ],
+        ];
+    })
+    ->put('get', 'json');
+~~~    
+<img src="https://habrastorage.org/files/577/1ca/fdc/5771cafdca3745e7aa438754529e5bc2.png"/>
 
-~~~
-<img src="https://habrastorage.org/files/481/c2b/963/481c2b963b8f4323ba1783b3ec47e612.png" />
-
-Вот так легко и непринужденно мы избавились от необходимости держать в голове принцип построения роутинга в Laravel5
+Вот так легко и непринужденно мы добились всех поставленных целей и избавились от необходимости держать в голове принцип построения роутинга в Laravel5

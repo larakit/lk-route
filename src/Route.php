@@ -78,7 +78,7 @@ class Route {
     function getAs() {
         $ret = $this->as;
         foreach($this->segments as $segment_name => $segment) {
-            $ret .= '.' . str_replace(['{', '}', '?'], '', $segment_name);
+            $ret .= '.' . str_replace(['{', '}', '_', '?'], '', $segment_name);
         }
 
         return $ret;
@@ -166,7 +166,8 @@ class Route {
      * @return $this
      */
     public function setNamespace($namespace) {
-        $this->namespace = '\\'.trim($namespace, '\\');
+        $this->namespace = '\\' . trim($namespace, '\\');
+
         return $this;
     }
 
@@ -230,6 +231,16 @@ class Route {
 
     function clearSegments() {
         $this->segments = [];
+
+        return $this;
+    }
+
+    function popSegment() {
+        if(count($this->segments) > 1) {
+            array_pop($this->segments);
+        } else {
+            $this->segments = [];
+        }
 
         return $this;
     }
@@ -298,7 +309,7 @@ class Route {
      *
      * @return $this
      */
-    function put($http_method = null,$ext=null) {
+    function put($http_method = null, $ext = null) {
         \Route::group([
             'middleware' => $this->getMiddleware(),
             'domain'     => $this->getDomain(),
@@ -306,7 +317,7 @@ class Route {
         ], function () use ($http_method, $ext) {
             $method = self::normalizeMethod($http_method);
             /** @var $route \Illuminate\Routing\Route */
-            $route = \Route::$method($this->getUrl().($ext?'.'.$ext:''), [
+            $route = \Route::$method($this->getUrl() . ($ext ? '.' . $ext : ''), [
                 'as'   => $this->getAs(),
                 'uses' => $this->getUses(),
             ]);
@@ -314,6 +325,7 @@ class Route {
                 $route->where($this->getPatterns());
             }
         });
+        $this->action     = null;
 
         return $this;
     }

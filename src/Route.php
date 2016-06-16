@@ -325,6 +325,7 @@ class Route {
                 $route->where($this->getPatterns());
             }
         });
+        
         $this->action     = null;
 
         return $this;

@@ -325,10 +325,35 @@ class Route {
                 $route->where($this->getPatterns());
             }
         });
-        
-        $this->action     = null;
+
+        $this->action = null;
 
         return $this;
+    }
+
+    static function resource($url) {
+        $group      = self::item($url)
+            ->setPrefix(env('API_PREFIX', '/api/v1'))
+            ->setBaseUrl($url)
+            //LIST
+            ->put('get')
+            ->setAction('store')
+            //ADD
+            ->put('post');
+        $controller = $group->getController();
+        $group->addSegment('{id}')
+            ->setController($controller)
+            ->setAction('show')
+            //ITEM
+            ->put('get')
+            ->setController($controller)
+            ->setAction('update')
+            //UPDATE
+            ->put('put')
+            ->setController($controller)
+            ->setAction('destroy')
+            //DELETE
+            ->put('delete');
     }
 
 }

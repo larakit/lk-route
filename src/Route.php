@@ -332,7 +332,7 @@ class Route {
     }
 
     static function resource($url) {
-        $group      = self::item($url)
+        $group      = self::item('api.'.$url)
             ->setPrefix(env('API_PREFIX', '/api/v1'))
             ->setBaseUrl($url)
             //LIST

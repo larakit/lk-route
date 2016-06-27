@@ -19,20 +19,44 @@ class Route {
     const PATTERN_NUMERIC           = '\d+';
     const PATTERN_DATE              = '\d+\-\d+\-\d+';
     const PATTERN_EMAIL             = '[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}';
-    static    $routes;
-    static    $route_params = [];
-    protected $as;
-    protected $model        = null;
-    protected $namespace    = null;
-    protected $domain       = null;
-    protected $middleware   = [];
-    protected $base_url     = null;
-    protected $action;
-    protected $segments     = [];
-    protected $patterns     = [];
-    protected $controller   = null;
-    protected $uses         = null;
-    protected $prefix       = null;
+    static           $routes;
+    static           $route_params = [];
+    protected        $as;
+    protected        $model        = null;
+    protected        $namespace    = null;
+    protected        $domain       = null;
+    protected        $middleware   = [];
+    protected        $base_url     = null;
+    protected        $action;
+    protected        $segments     = [];
+    protected        $patterns     = [];
+    protected        $controller   = null;
+    protected        $uses         = null;
+    protected        $prefix       = null;
+    static protected $icons        = null;
+    protected        $icon         = null;
+
+    /**
+     * @return null
+     */
+    public function getIcon() {
+        return $this->icon;
+    }
+
+    static public function routeIcons($route = null) {
+        return $route ? Arr::get(static::$icons, $route) : static::$icons;
+    }
+
+    /**
+     * @param null $icon
+     *
+     * @return Route;
+     */
+    public function setIcon($icon) {
+        $this->icon = $icon;
+
+        return $this;
+    }
 
     /**
      * @return null
@@ -310,6 +334,7 @@ class Route {
      * @return $this
      */
     function put($http_method = null, $ext = null) {
+        static::$icons[$this->getAs()] = $this->getIcon();
         \Route::group([
             'middleware' => $this->getMiddleware(),
             'domain'     => $this->getDomain(),
@@ -327,16 +352,21 @@ class Route {
         });
 
         $this->action = null;
+        $this->icon   = null;
 
         return $this;
     }
 
-    static function resource($url) {
-        $group      = self::item('api.'.$url)
+    static function apiResource($url) {
+        return self::item('api.' . $url)
             ->setPrefix(env('API_PREFIX', '/api/v1'))
             ->setBaseUrl($url)
             //LIST
-            ->put('get')
+            ->put('get');
+    }
+
+    static function apiResources($url) {
+        $group      = self::apiResource($url)
             ->setAction('store')
             //ADD
             ->put('post');
@@ -354,6 +384,26 @@ class Route {
             ->setAction('destroy')
             //DELETE
             ->put('delete');
+    }
+
+    static function getRouteByUri($uri) {
+        $uri    = parse_url($uri, PHP_URL_PATH);
+        $routes = \Route::getRoutes()->getRoutes();
+        $uri    = trim($uri, '/');
+        if(!$uri) {
+            return 'home';
+        }
+        foreach($routes as $route) {
+            /** @var \Illuminate\Routing\Route $route */
+            $route_uri = preg_replace('/\/\{(.*)\?\}/U', '*', $route->getUri());
+            $route_uri = preg_replace('/\*\*/U', '*', $route_uri);
+            $route_uri = preg_replace('/\{(.*)\}/U', '*', $route_uri);
+            if(\Illuminate\Support\Str::is($route_uri, $uri)) {
+                return $route->getName();
+            }
+        }
+
+        return false;
     }
 
 }

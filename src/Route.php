@@ -357,7 +357,7 @@ class Route {
         return $this;
     }
 
-    static function apiResource($url) {
+    static function apiResourceOne($url) {
         return self::item('api.' . $url)
             ->setPrefix(env('API_PREFIX', '/api/v1'))
             ->setBaseUrl($url)
@@ -365,8 +365,8 @@ class Route {
             ->put('get');
     }
 
-    static function apiResources($url) {
-        $group      = self::apiResource($url)
+    static function apiResource($url) {
+        $group      = self::apiResourceOne($url)
             ->setAction('store')
             //ADD
             ->put('post');

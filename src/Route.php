@@ -1,7 +1,6 @@
 <?php
 namespace Larakit\Route;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -384,6 +383,12 @@ class Route {
             ->setAction('destroy')
             //DELETE
             ->put('delete');
+    }
+
+    static function getIconByUri($uri) {
+        $route_name = Route::getRouteByUri($uri);
+
+        return $route_name ? Route::routeIcons($route_name) : null;
     }
 
     static function getRouteByUri($uri) {

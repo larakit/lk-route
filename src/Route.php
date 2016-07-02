@@ -376,10 +376,6 @@ class Route {
             //ITEM
             ->put('get')
             ->setController($controller)
-            ->setAction('update')
-            //UPDATE
-            ->put('put')
-            ->setController($controller)
             ->setAction('destroy')
             //DELETE
             ->put('delete');

@@ -370,15 +370,17 @@ class Route {
             //ADD
             ->put('post');
         $controller = $group->getController();
-        $group->addSegment('{id}')
+        //ITEM
+        $group
+            ->setController($controller)
+            ->setAction('delete')
+            //DELETE
+            ->put('delete')
+            ->addSegment('{id}')
             ->setController($controller)
             ->setAction('show')
-            //ITEM
-            ->put('get')
-            ->setController($controller)
-            ->setAction('destroy')
-            //DELETE
-            ->put('delete');
+            ->put('get');
+
     }
 
     static function getIconByUri($uri) {

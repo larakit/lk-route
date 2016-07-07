@@ -391,18 +391,23 @@ class Route {
 
     static function getRouteByUri($uri) {
         $uri    = parse_url($uri, PHP_URL_PATH);
-        $routes = \Route::getRoutes()->getRoutes();
+        $routes = [];
+        foreach(\Route::getRoutes()->getRoutes() as $route){
+            $routes[$route->getUri()] = $route->getName();
+        }
+        krsort($routes);
+//        dd($routes);
         $uri    = trim($uri, '/');
         if(!$uri) {
             return 'home';
         }
-        foreach($routes as $route) {
+        foreach($routes as $route_uri=>$name) {
             /** @var \Illuminate\Routing\Route $route */
-            $route_uri = preg_replace('/\/\{(.*)\?\}/U', '*', $route->getUri());
+            $route_uri = preg_replace('/\/\{(.*)\?\}/U', '*', $route_uri);
             $route_uri = preg_replace('/\*\*/U', '*', $route_uri);
             $route_uri = preg_replace('/\{(.*)\}/U', '*', $route_uri);
             if(\Illuminate\Support\Str::is($route_uri, $uri)) {
-                return $route->getName();
+                return $name;
             }
         }
 

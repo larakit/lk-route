@@ -1,6 +1,7 @@
 <?php
 namespace Larakit\Route;
 
+use Illuminate\Routing\Router;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -133,6 +134,29 @@ class Route {
         }
 
         return $url;
+    }
+
+    static function crud($as, $base_url, $icon = null) {
+        $r          = self::item($as)
+            ->setIcon($icon)
+            ->setBaseUrl($base_url)
+            ->put('get');
+        $controller = $r->getController();
+        $r->addSegment('add')
+            ->setController($controller)
+            ->setIcon('fa fa-plus')
+            ->setAction('add')
+            ->put('get');
+        $r->clearSegments()
+            ->addSegment('{id}')
+            ->setController($controller)
+            ->setAction('item')
+            ->put('get')
+            ->addSegment('edit')
+            ->setController($controller)
+            ->setAction('itemSave')
+            ->put('get');;
+
     }
 
     /**
@@ -392,26 +416,32 @@ class Route {
     static function getRouteByUri($uri) {
         $uri    = parse_url($uri, PHP_URL_PATH);
         $routes = [];
-        foreach(\Route::getRoutes()->getRoutes() as $route){
+        foreach(\Route::getRoutes()->getRoutes() as $route) {
             $routes[$route->getUri()] = $route->getName();
         }
         krsort($routes);
 //        dd($routes);
-        $uri    = trim($uri, '/');
+        $uri = trim($uri, '/');
         if(!$uri) {
             return 'home';
         }
-        foreach($routes as $route_uri=>$name) {
+        $matched = false;;
+        $max = null;
+        foreach($routes as $route_uri => $name) {
             /** @var \Illuminate\Routing\Route $route */
             $route_uri = preg_replace('/\/\{(.*)\?\}/U', '*', $route_uri);
             $route_uri = preg_replace('/\*\*/U', '*', $route_uri);
             $route_uri = preg_replace('/\{(.*)\}/U', '*', $route_uri);
             if(\Illuminate\Support\Str::is($route_uri, $uri)) {
-                return $name;
+                $m = mb_substr_count($route_uri, '{');
+                if(is_null($max) || !$m || ($m < $max)) {
+                    $max     = $m;
+                    $matched = $name;
+                }
             }
         }
 
-        return false;
+        return $matched;
     }
 
 }

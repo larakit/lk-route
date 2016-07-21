@@ -78,14 +78,14 @@ class Route {
 
     function __construct($code) {
         if(strpos($code, '::') !== false) {
-            $this->as        = Arr::get(explode('::', $code), 1);
+            $this->as        = $code;
             $this->namespace = '\\' . trim(Str::studly(Arr::get(explode('::', $code), 0)), '\\') . '\Controllers';
         } else {
             $this->as        = $code;
             $this->namespace = '\\' . \App::getNamespace() . 'Http\Controllers';
         }
         $this->base_url = '/' . trim(str_replace(['.', '_'], ['/', '-'], $this->as), '/') . '/';
-//        dump('-----------',$code, $this->as, $this->base_url);
+        //dump('-----------', $code, $this->as, $this->base_url);
     }
 
     /**
@@ -137,16 +137,21 @@ class Route {
     }
 
     static function crud($as, $base_url, $icon = null) {
+        $namespace  = \App::getNamespace() . 'Http\Controllers\\' . Str::studly(str_replace('.', '_', $as));
         $r          = self::item($as)
+//            ->setNamespace($namespace)
             ->setIcon($icon)
             ->setBaseUrl($base_url)
+//            ->setController('List')
             ->put('get');
         $controller = $r->getController();
         $r->addSegment('add')
             ->setController($controller)
             ->setIcon('fa fa-plus')
             ->setAction('add')
-            ->put('get');
+            ->put('get')
+            ->setAction('add')
+            ->put('post');
         $r->clearSegments()
             ->addSegment('{id}')
             ->setController($controller)
@@ -154,8 +159,17 @@ class Route {
             ->put('get')
             ->addSegment('edit')
             ->setController($controller)
-            ->setAction('itemSave')
-            ->put('get');;
+            ->setAction('itemEdit')
+            ->put('get')
+            ->setAction('itemEdit')
+            ->put('post')
+            ->popSegment()
+            ->addSegment('delete')
+            ->setController($controller)
+            ->setAction('itemDelete')
+            ->put('get')
+            ->setAction('itemDelete')
+            ->put('post');
 
     }
 
@@ -222,7 +236,12 @@ class Route {
      * @return null
      */
     public function getController() {
-        $controller = Str::studly(str_replace('.', '_', $this->getAs()));
+        $as = $this->getAs();
+        if(strpos($as, '::') !== false) {
+            $as = Arr::get(explode('::', $as), 1);
+        }
+
+        $controller = Str::studly(str_replace('.', '_', $as));
 
         return $this->controller ? : $controller . 'Controller';
     }
@@ -407,12 +426,6 @@ class Route {
 
     }
 
-    static function getIconByUri($uri) {
-        $route_name = Route::getRouteByUri($uri);
-
-        return $route_name ? Route::routeIcons($route_name) : null;
-    }
-
     static function getRouteByUri($uri) {
         $uri    = parse_url($uri, PHP_URL_PATH);
         $routes = [];
@@ -426,20 +439,24 @@ class Route {
             return 'home';
         }
         $matched = false;;
+        $_m  = [];
         $max = null;
         foreach($routes as $route_uri => $name) {
             /** @var \Illuminate\Routing\Route $route */
             $route_uri = preg_replace('/\/\{(.*)\?\}/U', '*', $route_uri);
             $route_uri = preg_replace('/\*\*/U', '*', $route_uri);
             $route_uri = preg_replace('/\{(.*)\}/U', '*', $route_uri);
+            //dump($route_uri . ' | ' . $matched . ' | ' . $max);
             if(\Illuminate\Support\Str::is($route_uri, $uri)) {
-                $m = mb_substr_count($route_uri, '{');
+                $_m[] = [$name, $route_uri];
+                $m    = mb_substr_count($route_uri, '{');
                 if(is_null($max) || !$m || ($m < $max)) {
                     $max     = $m;
                     $matched = $name;
                 }
             }
         }
+        //dump($_m);
 
         return $matched;
     }

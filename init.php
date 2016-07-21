@@ -7,6 +7,6 @@
  * Time: 9:37
  */
 
-\Larakit\Twig::register_function('icon_by_uri', function ($uri) {
-    return \Larakit\Route\Route::getIconByUri($uri);
+\Larakit\Twig::register_function('icon_by_route', function ($route_name) {
+    return \Larakit\Route\Route::routeIcons($route_name);
 });

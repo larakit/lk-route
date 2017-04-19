@@ -1,22 +1,25 @@
 {
     "name": "larakit/lk-route",
-    "description": "[Larakit] Пакет для простой инициализации роутов",
-    "version": "1.0.0",
+    "description": "[Larakit] Управление роутами",
     "keywords": [
-        "laravel",
         "laravel 5",
+        "laravel",
         "larakit"
     ],
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Alexey Berdnikov",
+            "email": "aberdnikov@gmail.com"
+        }
+    ],
     "require": {
-        "laravel/framework": "*"
+        "laravel/framework": "5.*"
     },
     "autoload": {
         "psr-4": {
-            "Larakit\\Route\\": "src/"
-        },
-        "files": [
-            "init.php"
-        ]
-    }
+            "Larakit\\Route\\": "src"
+        }
+    },
+    "minimum-stability": "dev"
 }

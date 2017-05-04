@@ -101,7 +101,7 @@ class Route {
     function getAs() {
         $ret = $this->as;
         foreach($this->segments as $segment_name => $segment) {
-            $ret .= '.' . str_replace(['{', '}', '_', '?'], '', $segment_name);
+            $ret .= '.' . str_replace(['{', '}', '?'], '', $segment_name);
         }
         
         return $ret;
@@ -160,9 +160,10 @@ class Route {
     static function ajax($as) {
         return self::item('ajax.' . $as)
             //                   ->addMiddleware('ajax')
-            ->setController($as)
+            ->setController(Str::studly('ajax_'.str_replace('.', '_', $as)))
+            ->setPrefix('!')
             ->setBaseUrl(str_replace('.', '/', $as))
-            ->setNamespace('\\' . \App::getNamespace() . 'Http\Controllers\Ajax')
+            ->setNamespace('\\' . \App::getNamespace() . 'Http\Controllers')
             ->setPrefix(env('ADMIN_URL', '/!/ajax/'));
     }
     

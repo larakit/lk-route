@@ -162,7 +162,7 @@ class Route {
             //                   ->addMiddleware('ajax')
             ->setController(Str::studly('ajax_'.str_replace('.', '_', $as)))
             ->setPrefix('!')
-            ->setBaseUrl(str_replace('.', '/', $as))
+            ->setBaseUrl(str_replace(['.', '_'], ['/', '-'], $as))
             ->setNamespace('\\' . \App::getNamespace() . 'Http\Controllers')
             ->setPrefix(env('ADMIN_URL', '/!/ajax/'));
     }

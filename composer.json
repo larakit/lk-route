@@ -13,9 +13,6 @@
             "email": "aberdnikov@gmail.com"
         }
     ],
-    "require": {
-        "laravel/framework": "5.*"
-    },
     "autoload": {
         "psr-4": {
             "Larakit\\Route\\": "src"
